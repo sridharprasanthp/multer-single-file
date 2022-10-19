@@ -3,7 +3,7 @@ var router = express.Router();
 var multer = require('multer');
 var path = require('path');
 var Multer = require("./Schema");
-var fs= require('fs')
+var fs = require('fs')
 
 const Storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -24,7 +24,7 @@ const fileFilter = (req, file, cb) => {
     }
 }
 
-const upload = multer({ storage: Storage, fileFilter:fileFilter });
+const upload = multer({ storage: Storage, fileFilter: fileFilter });
 
 router.post('/SingleFile', upload.single('file'), async (req, res) => {
     // console.log(req.file);
@@ -44,15 +44,35 @@ router.get('/', async (req, res) => {
     res.json(multers);
 });
 
-
-router.delete('/:id', async (req, res) => {
-    const data=await Multer.findById(req.params.id)
-    await fs.unlink(data.path,(err=>{
-        if(err){
+router.post('/UpdateFile/:id', upload.single('file'), async (req, res) => {
+    const multers = await Multer.findById(req.params.id);
+    await fs.unlink(multers.path, (err => {
+        if (err) {
             console.log("error")
         }
-        else{
-        console.log("deleted in file system")
+        else {
+            console.log("removed Succesfully")
+        }
+    }));
+    const mult = await Multer.findByIdAndUpdate(req.params.id);
+    mult.originalname = req.file.originalname;
+    mult.mimetype = req.file.mimetype;
+    mult.filename = req.file.filename;
+    mult.path = req.file.path;
+    mult.size = req.file.size;
+    await mult.save();
+    res.json("Updated")
+
+})
+
+router.delete('/:id', async (req, res) => {
+    const data = await Multer.findById(req.params.id)
+    await fs.unlink(data.path, (err => {
+        if (err) {
+            console.log("error")
+        }
+        else {
+            console.log("deleted in file system")
         }
     }))
     await Multer.findByIdAndDelete(req.params.id);
